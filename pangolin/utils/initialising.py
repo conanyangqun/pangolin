@@ -25,6 +25,7 @@ import scorpio
 import constellations
 
 def setup_config_dict(cwd):
+    # 设置参数，以字典形式返回
     default_dict = {
             KEY_ANALYSIS_MODE:"usher", #options: accurate, fast, usher, pangolearn
             
@@ -107,6 +108,7 @@ def get_snakefile(thisdir,analysis_mode):
     return snakefile
 
 def check_datadir(datadir_arg):
+    # 判断数据目录是否存在，返回全局路径
     datadir = None
     # find the data
     if datadir_arg:
@@ -129,8 +131,10 @@ def version_from_init(init_file):
     return version
 
 def setup_data(datadir_arg, analysis_mode, config, use_old_data):
+    # 根据数据包，设置数据相关的参数
     datadir = check_datadir(datadir_arg)
 
+    # 获取安装的数据包
     config[KEY_PANGOLIN_DATA_VERSION] = pangolin_data.__version__
     config[KEY_DATADIR] = pangolin_data.__path__[0]
     config[KEY_CONSTELLATIONS_VERSION] = constellations.__version__
@@ -139,6 +143,7 @@ def setup_data(datadir_arg, analysis_mode, config, use_old_data):
     config[KEY_PANGOLIN_ASSIGNMENT_PATH] = pangolin_assignment.__path__[0]
    
     if datadir:
+        # 指定数据目录
         for module_name in ('constellations', 'pangolin_data', 'pangolin_assignment'):
             for r, _, f in os.walk(datadir):
                 for fn in f:
@@ -157,6 +162,7 @@ def setup_data(datadir_arg, analysis_mode, config, use_old_data):
                                 config[KEY_CONSTELLATIONS_VERSION] = version
                                 config[KEY_CONSTELLATION_FILES] = get_constellation_files(r)
                         else:
+                            # 使用最新的数据
                             sys.stderr.write(cyan(f"Warning: Ignoring {module_name} in specified datadir {datadir} - it contains {module_name} with older ({version}) than those installed ({current_version})\n"))
 
 def parse_qc_thresholds(maxambig, minlen, reference_fasta, config):
@@ -244,11 +250,12 @@ def print_versions_exit(config):
     sys.exit(0)
 
 def set_up_verbosity(config):
+    # 设置与日志输出有关的参数
     if config[KEY_VERBOSE]:
         config["quiet"] = False
         config[KEY_LOG_API] = ""
         config["log_string"] = ""
     else:
         config["quiet"] = True
-        logger = custom_logger.Logger()
+        logger = custom_logger.Logger() # 自定义日志记录器
         config[KEY_LOG_API] = logger.log_handler

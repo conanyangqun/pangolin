@@ -1,3 +1,4 @@
+# 此模块设置了一些关键变量
 KEY_ANALYSIS_MODE="analysis_mode"
 
 KEY_QUERY_FASTA="query_fasta"

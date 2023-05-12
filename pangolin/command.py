@@ -2,6 +2,8 @@
 from . import _program
 from pangolin import __version__
 from pangolin.utils import data_checks
+
+# 导入三个python包
 try:
     import pangolin_data
 except ImportError:
@@ -24,6 +26,7 @@ import argparse
 try:
     import snakemake
 except:
+    # 如果未安装snakemake，会报无法找到cyan的错误
     sys.stderr.write(cyan(f'Error: package `{snakemake}` not found, please install snakemake or update pangolin environment.\n'))
     sys.exit(-1)
 
@@ -45,6 +48,7 @@ cwd = os.getcwd()
 
 
 def main(sysargs = sys.argv[1:]):
+    # 定义命令行解析函数
     parser = argparse.ArgumentParser(prog = _program,
     description='pangolin: Phylogenetic Assignment of Named Global Outbreak LINeages',
     usage='''pangolin <query> [options]''')
@@ -94,6 +98,7 @@ Finally, it is possible to skip the UShER/ pangoLEARN step by selecting "scorpio
     m_group.add_argument("-t","--threads",action="store",default=1,type=int, help="Number of threads")
 
 
+    # 解析命令行参数
     if len(sysargs)<1:
         parser.print_help()
         sys.exit(-1)
@@ -101,18 +106,22 @@ Finally, it is possible to skip the UShER/ pangoLEARN step by selecting "scorpio
         args = parser.parse_args(sysargs)
 
     # Initialise config dict
+    # 设置配置信息
     config = setup_config_dict(cwd)
     data_checks.check_install(config)
     set_up_verbosity(config)
 
+    # 判断参数的合理性
     if args.usher:
         sys.stderr.write(cyan(f"--usher is a pangolin v3 option and is deprecated in pangolin v4.  UShER is now the default analysis mode.  Use --analysis-mode to explicitly set mode.\n"))
 
     setup_data(args.datadir,config[KEY_ANALYSIS_MODE], config, args.use_old_datadir)
 
+    # 安装pangolin-assignment仓库
     if args.add_assignment_cache:
         update.install_pangolin_assignment(config[KEY_PANGOLIN_ASSIGNMENT_VERSION], args.datadir)
 
+    # 更新所有的组件
     if args.update:
         version_dictionary = {'pangolin': __version__,
                               'pangolin-data': config[KEY_PANGOLIN_DATA_VERSION],
@@ -122,6 +131,7 @@ Finally, it is possible to skip the UShER/ pangoLEARN step by selecting "scorpio
             version_dictionary['pangolin-assignment'] = config[KEY_PANGOLIN_ASSIGNMENT_VERSION]
         update.update(version_dictionary)
 
+    # 只更数据
     if args.update_data:
         version_dictionary = {'pangolin-data': config[KEY_PANGOLIN_DATA_VERSION],
                               'constellations': config[KEY_CONSTELLATIONS_VERSION]}
@@ -135,23 +145,30 @@ Finally, it is possible to skip the UShER/ pangoLEARN step by selecting "scorpio
         sys.exit(0)
 
     # add flag to config for whether to run scorpio
+    # 判断是否运行scorpio
     if args.skip_scorpio:
         print(green(f"****\nPangolin skipping scorpio steps.\n****"))
         config[KEY_SKIP_SCORPIO] = True
     
+    # 是否扩充谱系信息
     if args.expanded_lineage:
         print(green(f"****\nAdding expanded lineage column to output.\n****"))
         config[KEY_EXPANDED_LINEAGE] = True
         
     # Parsing analysis mode flags to return one of 'usher' or 'pangolearn'
+    # 解析分析模式标志
     config[KEY_ANALYSIS_MODE] = set_up_analysis_mode(args.analysis_mode, config[KEY_ANALYSIS_MODE])
 
+    # 解析snakefile文件
     snakefile = get_snakefile(thisdir,config[KEY_ANALYSIS_MODE])
 
+    # 获取designation和alias文件
     config[KEY_DESIGNATION_CACHE],config[KEY_ALIAS_FILE] = data_checks.find_designation_cache_and_alias(config[KEY_DATADIR],DESIGNATION_CACHE_FILE,ALIAS_FILE)
+    # 输出alias.json文件
     if args.aliases:
         print_alias_file_exit(config[KEY_ALIAS_FILE])
 
+    # 输出所有版本信息
     if args.all_versions:
         print_versions_exit(config)
 
@@ -165,6 +182,7 @@ Finally, it is possible to skip the UShER/ pangoLEARN step by selecting "scorpio
     print_ram_warning(config[KEY_ANALYSIS_MODE])
 
 #   setup outdir and outfiles
+    # 设置输出目录和输出文件
     config[KEY_OUTDIR] = io.set_up_outdir(args.outdir,cwd,config[KEY_OUTDIR])
     config[KEY_OUTFILE] = io.set_up_outfile(args.outfile, config[KEY_OUTFILE],config[KEY_OUTDIR])
     io.set_up_tempdir(args.tempdir,args.no_temp,cwd,config[KEY_OUTDIR], config)
@@ -174,6 +192,7 @@ Finally, it is possible to skip the UShER/ pangoLEARN step by selecting "scorpio
 
     config[KEY_INPUT_COMPRESSION_TYPE] = io.quick_check_query_file(cwd, args.query, config[KEY_QUERY_FASTA])
 
+    # 具体的执行模式
     if config[KEY_ANALYSIS_MODE] == "usher":
         # Find usher protobuf file (and if specified, assignment cache file too)
         data_checks.get_datafiles(config[KEY_DATADIR],usher_files,config)
@@ -195,9 +214,12 @@ Finally, it is possible to skip the UShER/ pangoLEARN step by selecting "scorpio
         if args.use_assignment_cache or args.assignment_cache:
             sys.stderr.write(cyan(f"Warning: --use-assignment-cache and --assignment-cache are ignored when --analysis-mode is 'fast' or 'pangolearn'.\n"))
     
+    # 预处理snakefile
     preprocessing_snakefile = get_snakefile(thisdir,"preprocessing")
 
+    # 执行预处理步骤
     if args.verbose:
+        # 输出所有的配置信息
         print(green("\n**** CONFIG ****"))
         for k in sorted(config):
             print(green(k), config[k])
@@ -228,7 +250,8 @@ Finally, it is possible to skip the UShER/ pangoLEARN step by selecting "scorpio
         else:
             status = True
        
-        if status: 
+        if status:
+            # 这部分代码生成最终的报告 
             
             ## Collate the report here
 

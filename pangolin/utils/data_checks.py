@@ -8,8 +8,9 @@ import gzip
 from pangolin.utils.config import *
 
 def package_data_check(filename,directory,key,config):
+    # 根据资源的安装情况，更新配置
     try:
-        package_datafile = os.path.join(directory,filename)
+        package_datafile = os.path.join(directory,filename) # data/reference.fasta
         data = pkg_resources.resource_filename('pangolin', package_datafile)
         config[key] = data
     except:
@@ -18,6 +19,7 @@ def package_data_check(filename,directory,key,config):
 
 
 def check_install(config):
+    # 检查资源文件是否已经安装，更新配置。
     resources = [
         {"key":"reference_fasta",
         "directory":"data",
