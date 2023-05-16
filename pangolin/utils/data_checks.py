@@ -29,6 +29,7 @@ def check_install(config):
         package_data_check(resource["filename"],resource["directory"],resource["key"],config)
 
 def find_designation_cache_and_alias(datadir,designation_cache_file,alias_file):
+    # 迭代数据目录，寻找designation缓存和alias文件。
     designation_cache = ""
     alias = ""
     for r,d,f in os.walk(datadir):
@@ -46,6 +47,7 @@ def find_designation_cache_and_alias(datadir,designation_cache_file,alias_file):
     return designation_cache,alias
 
 def check_file_arg(arg_file, cwd, description):
+    # 判断参数文件是否存在
     if arg_file:
         file_path = os.path.join(cwd, arg_file)
         if not os.path.exists(file_path):
@@ -54,13 +56,16 @@ def check_file_arg(arg_file, cwd, description):
     return file_path
 
 def get_datafiles(datadir,file_dict,config):
+    # 遍历数据目录，获取需要的数据文件，添加到配置变量
     datafiles = {}
     for r,d,f in os.walk(datadir):
         for fn in f:
             if fn in file_dict:
                 datafiles[file_dict[fn]] = os.path.join(r, fn)
+    
     for fn in datafiles:
         config[fn] = datafiles[fn]
+    
     for fn in file_dict:
         if file_dict[fn] not in config:
             sys.stderr.write(cyan(f'Error: Cannot find {fn} in datadir. Please supply a datadir with required files or specify an alternative analysis mode.\nPlease see https://cov-lineages.org/pangolin.html for full installation and updating instructions.'))
@@ -80,6 +85,7 @@ def install_error(package, url):
 
 
 def get_assignment_cache(cache_file, config):
+    # 使用pangolin assignment cache
     cache = ""
     if config[KEY_PANGOLIN_ASSIGNMENT_VERSION] is not None:
         pangolin_assignment_dir = config[KEY_PANGOLIN_ASSIGNMENT_PATH]
@@ -117,6 +123,7 @@ def get_assignment_cache(cache_file, config):
     return cache
 
 def get_constellation_files(path):
+    # 迭代path，获取constellations相关文件
     constellation_files = []
     for r, _, f in os.walk(path):
         for fn in f:

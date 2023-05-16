@@ -19,6 +19,7 @@ def get_latest_release(dependency):
     """
     Using the github releases API check for the latest release of dependency and its tarball
     """
+    # 使用github发布API获取最新发布的版本信息
     try:
         latest_release = request.urlopen(
             f"https://api.github.com/repos/cov-lineages/{dependency}/releases")
@@ -54,6 +55,7 @@ def git_lfs_install():
     'git-lfs install' must be run after installing git-lfs and before cloning a repo
     that uses Git LFS.
     """
+    # 安装git lfs
     try:
         subprocess.run(['git-lfs', 'install'],
                    check=True,
@@ -68,6 +70,7 @@ def pip_install_dep(dependency, release, datadir=None):
     """
     Use pip install to install a cov-lineages repository with the specificed release
     """
+    # 使用pip安装依赖包
     url = f"git+https://github.com/cov-lineages/{dependency}.git@{release}"
     pip_command = [sys.executable, '-m', 'pip', 'install', '--upgrade']
     if datadir is not None:
@@ -83,6 +86,7 @@ def install_pangolin_assignment(pangolin_assignment_version, datadir=None):
     """
     If the pangolin-assignment repo has not been installed already then install the latest release.
     """
+    # 安装pangolin_assignment仓库
     if pangolin_assignment_version is not None:
         print(f"pangolin-assignment already installed with version {pangolin_assignment_version}; use --update or --update-data if you wish to update it.", file=sys.stderr)
     else:
@@ -119,6 +123,7 @@ def update(version_dictionary, data_dir=None):
                        constellations data module}
 
     """
+    # 自动更新pangolin等5个组件
     package_names = {'pangolin-data': 'pangolin_data',
                      'pangolin-assignment': 'pangolin_assignment'
                     }

@@ -122,6 +122,7 @@ Finally, it is possible to skip the UShER/ pangoLEARN step by selecting "scorpio
         update.install_pangolin_assignment(config[KEY_PANGOLIN_ASSIGNMENT_VERSION], args.datadir)
 
     # 更新所有的组件
+    # 更新完毕，程序退出
     if args.update:
         version_dictionary = {'pangolin': __version__,
                               'pangolin-data': config[KEY_PANGOLIN_DATA_VERSION],
@@ -141,6 +142,7 @@ Finally, it is possible to skip the UShER/ pangoLEARN step by selecting "scorpio
 
     # install_pangolin_assignment doesn't exit so that --update/--update-data can be given at the
     # same time (or a query file).  If --add-assignment-cache is the only arg, exit without error.
+    # 安装pangolin_assignment没有退出
     if args.add_assignment_cache and not args.query:
         sys.exit(0)
 
@@ -151,6 +153,7 @@ Finally, it is possible to skip the UShER/ pangoLEARN step by selecting "scorpio
         config[KEY_SKIP_SCORPIO] = True
     
     # 是否扩充谱系信息
+    # 在报告中是否添加扩充谱系的信息
     if args.expanded_lineage:
         print(green(f"****\nAdding expanded lineage column to output.\n****"))
         config[KEY_EXPANDED_LINEAGE] = True
@@ -164,17 +167,17 @@ Finally, it is possible to skip the UShER/ pangoLEARN step by selecting "scorpio
 
     # 获取designation和alias文件
     config[KEY_DESIGNATION_CACHE],config[KEY_ALIAS_FILE] = data_checks.find_designation_cache_and_alias(config[KEY_DATADIR],DESIGNATION_CACHE_FILE,ALIAS_FILE)
-    # 输出alias.json文件
+    # 输出alias.json文件内容，程序退出。
     if args.aliases:
         print_alias_file_exit(config[KEY_ALIAS_FILE])
 
-    # 输出所有版本信息
+    # 输出所有版本信息，程序退出
     if args.all_versions:
         print_versions_exit(config)
 
     # to enable not having to pass a query if running update
     # by allowing query to accept 0 to many arguments
-    
+    # 打印一些分析模式相关的日志
     print(green(f"****\nPangolin running in {config[KEY_ANALYSIS_MODE]} mode.\n****"))
     if config[KEY_ANALYSIS_MODE] == "scorpio":
         print(cyan(f"Warning: in `scorpio` mode only variants of concern (VOCs) defined in constellations can be assigned. `Version` column corresponds to constellation_version.\n"))
@@ -195,6 +198,7 @@ Finally, it is possible to skip the UShER/ pangoLEARN step by selecting "scorpio
     # 具体的执行模式
     if config[KEY_ANALYSIS_MODE] == "usher":
         # Find usher protobuf file (and if specified, assignment cache file too)
+        # usher分析模式
         data_checks.get_datafiles(config[KEY_DATADIR],usher_files,config)
         if args.usher_protobuf:
             config[KEY_USHER_PB] = data_checks.check_file_arg(args.usher_protobuf, cwd, '--usher-tree')
@@ -224,6 +228,7 @@ Finally, it is possible to skip the UShER/ pangoLEARN step by selecting "scorpio
         for k in sorted(config):
             print(green(k), config[k])
 
+        # 执行预处理分析
         status = snakemake.snakemake(preprocessing_snakefile, printshellcmds=True, forceall=True, force_incomplete=True,
                                         workdir=config[KEY_TEMPDIR],config=config, cores=args.threads,lock=False
                                         )
@@ -232,8 +237,12 @@ Finally, it is possible to skip the UShER/ pangoLEARN step by selecting "scorpio
         status = snakemake.snakemake(preprocessing_snakefile, printshellcmds=False, forceall=True,force_incomplete=True,workdir=config[KEY_TEMPDIR],
                                     config=config, cores=args.threads,lock=False,quiet=True,log_handler=logger.log_handler
                                     )
-    if status: 
+    
+    # part2部分
+    if status:
+        # 预处理分析成功
         if config[KEY_ANALYSIS_MODE] != "scorpio":
+            # 非scorpio模式，执行分析
             if config[KEY_VERBOSE]:
                 print(green("\n**** CONFIG ****"))
                 for k in sorted(config):
@@ -248,10 +257,11 @@ Finally, it is possible to skip the UShER/ pangoLEARN step by selecting "scorpio
                                             config=config, cores=args.threads,lock=False,quiet=True,log_handler=logger.log_handler
                                             )
         else:
+            # scorpio模式
             status = True
        
         if status:
-            # 这部分代码生成最终的报告 
+            # part2分析成功，生成最终的报告 
             
             ## Collate the report here
 
@@ -267,12 +277,15 @@ Finally, it is possible to skip the UShER/ pangoLEARN step by selecting "scorpio
             if config[KEY_ALIGNMENT_OUT]:
                 print(green(f"****\nOutput alignment written to: ") + config[KEY_ALIGNMENT_FILE])
 
-            io.cleanup(args.no_temp,config[KEY_TEMPDIR])
+            io.cleanup(args.no_temp,config[KEY_TEMPDIR]) # 清理临时目录
 
             return 0
 
+        # part2分析失败
         io.cleanup(args.no_temp,config[KEY_TEMPDIR])
         return 1
+    
+    # part 1分析失败
     io.cleanup(args.no_temp,config[KEY_TEMPDIR])
     return 1
 

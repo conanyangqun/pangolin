@@ -81,7 +81,7 @@ def set_up_analysis_mode(analysis_arg, default_mode):
     - overwrites default if any other analysis mode flagged
     - returns new analysis mode
     """
-    
+    # 判断命令行参数中分析模式的准确性，给出合适的分析模式。
     analysis_mode = default_mode
     if analysis_arg:
         if not analysis_arg in ["usher","pangolearn","fast","accurate","scorpio"]:
@@ -98,6 +98,7 @@ def set_up_analysis_mode(analysis_arg, default_mode):
     return analysis_mode
     
 def get_snakefile(thisdir,analysis_mode):
+    # 对于usher、pangolearn模式，从scripts获取smk文件
     snakefile = ""
     if analysis_mode != "scorpio":
         # in this case now, the snakefile used should be the name of the analysis mode (i.e. pangolearn, usher or preprocessing)
@@ -120,6 +121,7 @@ def check_datadir(datadir_arg):
     return datadir
 
 def version_from_init(init_file):
+    # 从__init__.py文件中获取版本信息
     version=None
     with open(init_file, "r") as fr:
         for l in fr:
@@ -134,7 +136,7 @@ def setup_data(datadir_arg, analysis_mode, config, use_old_data):
     # 根据数据包，设置数据相关的参数
     datadir = check_datadir(datadir_arg)
 
-    # 获取安装的数据包
+    # 获取安装的数据包，设置默认参数
     config[KEY_PANGOLIN_DATA_VERSION] = pangolin_data.__version__
     config[KEY_DATADIR] = pangolin_data.__path__[0]
     config[KEY_CONSTELLATIONS_VERSION] = constellations.__version__
@@ -143,7 +145,7 @@ def setup_data(datadir_arg, analysis_mode, config, use_old_data):
     config[KEY_PANGOLIN_ASSIGNMENT_PATH] = pangolin_assignment.__path__[0]
    
     if datadir:
-        # 指定数据目录
+        # 根据指定的数据目录，获取相应的参数
         for module_name in ('constellations', 'pangolin_data', 'pangolin_assignment'):
             for r, _, f in os.walk(datadir):
                 for fn in f:
@@ -152,6 +154,7 @@ def setup_data(datadir_arg, analysis_mode, config, use_old_data):
                         # module_name has been imported so exists in global namespace
                         current_version = getattr(globals()[module_name], '__version__', '0')
                         if use_old_data or current_version is None or LooseVersion(version) >= LooseVersion(current_version):
+                            # 使用旧数据，或当前未安装数据包，或数据目录版本超过安装的数据包版本
                             if module_name == "pangolin_data":
                                 config[KEY_PANGOLIN_DATA_VERSION] = version
                                 config[KEY_DATADIR] = os.path.join(datadir, r)
@@ -162,11 +165,12 @@ def setup_data(datadir_arg, analysis_mode, config, use_old_data):
                                 config[KEY_CONSTELLATIONS_VERSION] = version
                                 config[KEY_CONSTELLATION_FILES] = get_constellation_files(r)
                         else:
-                            # 使用最新的数据
+                            # 使用安装的数据包中的数据
                             sys.stderr.write(cyan(f"Warning: Ignoring {module_name} in specified datadir {datadir} - it contains {module_name} with older ({version}) than those installed ({current_version})\n"))
 
 def parse_qc_thresholds(maxambig, minlen, reference_fasta, config):
-    
+    # 设置QC阈值
+
     if maxambig:
         maxambig = float(maxambig)
         if maxambig <=1 and maxambig >= 0:
@@ -185,7 +189,7 @@ def parse_qc_thresholds(maxambig, minlen, reference_fasta, config):
             sys.stderr.write(cyan(f'Error: `--min-length` should be less than the length of the reference: {reflen}.\n'))
             sys.exit(-1)
         else:
-            new_maxambig = round(1-(minlen/reflen), 3)
+            new_maxambig = round(1-(minlen/reflen), 3) # 校正ambiguity参数
             print(f"Converting minimum length of {minlen} to maximum ambiguity of {new_maxambig}.")
             if new_maxambig < config[KEY_MAXAMBIG]:
                 config[KEY_MAXAMBIG] = new_maxambig
@@ -193,10 +197,12 @@ def parse_qc_thresholds(maxambig, minlen, reference_fasta, config):
     print(green(f"Maximum ambiguity allowed is {config[KEY_MAXAMBIG]}.\n****"))
 
 def print_ram_warning(analysis_mode):
+    # 对于pangolearn模式，提示需要有足够的RAM
     if analysis_mode == "pangolearn":
         print(cyan("Warning: pangoLEARN mode may use a significant amount of RAM, be aware that it will not suit every system."))
 
 def print_alias_file_exit(alias_file):
+    # print_versions_exit
     with open(alias_file, 'r') as handle:
         for line in handle:
             print(line.rstrip())
@@ -204,6 +210,7 @@ def print_alias_file_exit(alias_file):
     sys.exit(0)
 
 def get_version(programs):
+    # 获取某个程序的版本信息
     for program in programs:
         cmd = [f"{program} --version"]
         output = subprocess.run(cmd, shell=True, check=True,
@@ -212,6 +219,7 @@ def get_version(programs):
         print(f"{program.split()[0]} {version}")
 
 def print_faToVf_version():
+    # 获取faToVcf版本信息
     output = subprocess.run("faToVcf -verbose=2 -h 2>&1 | grep '#'", shell=True, check=True,
                                 stdout=subprocess.PIPE, encoding='utf-8')
     version = output.stdout.split(' ')[-2]
@@ -236,6 +244,7 @@ def print_conda_version(pkg_list):
             sys.stderr.write(cyan(f"version not found in output of 'conda list {pkg}':\n{output}\n"))
 
 def print_versions_exit(config):
+    # 输出程序和数据的版本，软件退出
     print(f"pangolin: {config[KEY_PANGOLIN_VERSION]}\n"
             f"pangolin-data: {config[KEY_PANGOLIN_DATA_VERSION]}\n"
             f"constellations: {config[KEY_CONSTELLATIONS_VERSION]}\n"
